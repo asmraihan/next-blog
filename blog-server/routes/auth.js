@@ -22,7 +22,7 @@ router.post(`/registerUser`, async (req, res) => {
             },
         })
         res.status(200).json(
-            { message: "User Created Successfully", ...user, success: true },
+            { message: "User Created Successfully", user, success: true },
         );
         await logger("user_created", name, `User created: ${user.id}`);
 
@@ -50,7 +50,7 @@ router.post('/loginUser', async (req, res) => {
 
         if (!isCorrect) return res.status(400).json({ error: "Invalid credentials" });
 
-        return res.status(200).json({ message: "User Login Successfully", ...user, success: true });
+        return res.status(200).json({ message: "User Login Successfully", user, success: true });
 
     } catch (error) {
         return res.status(500).json({ error: "Internal Server error", ...error, success: false });
@@ -58,104 +58,53 @@ router.post('/loginUser', async (req, res) => {
 })
 
 
-// get single user and organization collection data by user_id by  aggregating
-
-router.post('/getUserAndOrganization', async (req, res) => {
-    const { user_id } = req.body;
-    try {
-        const result = await prisma.user.aggregateRaw({
-            pipeline: [
-                {
-                    $match: {
-                        user_id: user_id
-                    }
-                },
-                {
-                    $lookup: {
-                        from: "organization",
-                        localField: "user_id",
-                        foreignField: "user_id",
-                        as: "organizationData"
-                    }
-                },
-                {
-                    $unwind: {
-                        path: "$organizationData",
-                        preserveNullAndEmptyArrays: true
-                    }
-                },
-                {
-                    $project: {
-                        user_id: 1,
-                        name: 1,
-                        number: 1,
-                        email: 1,
-                        role: 1,
-                        isComplete: 1,
-                        status: 1,
-                        createdAt: 1,
-                        updatedAt: 1,
-                        organizationData: {
-                            org_id: "$organizationData.org_id",
-                            name: "$organizationData.name",
-                            owner_name: "$organizationData.owner_name",
-                            number: "$organizationData.number",
-                            email: "$organizationData.email",
-                            type: "$organizationData.type",
-                            isMulti: "$organizationData.isMulti",
-                            location: "$organizationData.location",
-                            logo: "$organizationData.logo",
-                            status: "$organizationData.status",
-                            date: "$organizationData.date"
-                        }
-                    }
-                }
-            ]
-        });
-
-        res.status(200).json(result);
-    } catch (error) {
-        res.status(500).json({ error: "Internal server error" });
-    }
-});
-
-
+// get all users
 
 router.post('/getAllUsers', async (req, res) => {
     try {
-        const users = await prisma.user.findMany({
-            select: {
-                id: true,
-                user_id: true,
-                name: true,
-                number: true,
-                role: true,
-                createdAt: true,
-                updatedAt: true
-            },
-        });
-        res.json(users);
+        const users = await prisma.user.findMany();
+        res.status(200).json({ message: "User Login Successfully", users, success: true });
     } catch (error) {
-        res.status(500).json({ error: "Internal server error" });
+        res.status(500).json({ error: "Internal server error", ...error, success: false });
+    }
+});
+
+// get user by id
+
+router.post(`/getUserById`, async (req, res) => {
+    try {
+        const { id } = req.body;
+        const user = await prisma.user.findFirst({
+            where: { id },
+            include: {
+                blogs: true,
+                _count: {
+                    select: { blogs: true }, /* FIXASM */
+                },
+            }
+        })
+        if (!user) {
+            return res.status(404).json({ error: "User not found", success: false });
+        }
+        res.json({ message: "User Found Successfully", user, success: true });
+    } catch (error) {
+        res.status(500).json({ error: "Internal server error", ...error, success: false });
     }
 });
 
 
 router.post(`/deleteUser`, async (req, res) => {
     try {
-        const { user_id } = req.body;
+        const { email } = req.body;
         const user = await prisma.user.delete({
-            where: {
-                user_id: user_id,
-            },
+            where: { email },
         });
-
         if (!user) {
-            return res.status(404).json({ error: "User not found" });
+            return res.status(404).json({ error: "User not found", success: false });
         }
-        res.json(user);
+        res.json({ message: "User Deleted Successfully", ...user, success: true });
     } catch (error) {
-        res.status(500).json({ error: "Internal server error" });
+        res.status(500).json({ error: "Internal server error", ...error, success: false });
     }
 });
 
