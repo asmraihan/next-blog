@@ -4,7 +4,7 @@ import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
 
 
-const authOptions = {
+export const authOptions = {
 
     providers: [
         CredentialsProvider({
