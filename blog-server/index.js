@@ -28,11 +28,11 @@ app.use(fileupload());
 
 
 //? CONTROLERS IMPORT
-const authority = require("./routes/authority")
+const auth = require("./routes/auth")
 
 
 //? CONTROLLERS USE
-app.use("/authority", authority)
+app.use("/auth", auth)
 
 
 //? VIEW ENGINE

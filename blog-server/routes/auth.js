@@ -8,115 +8,52 @@ const { uploadFile } = require("../uploadFile");
 
 // TODO USER ENDPOINTS
 
-// get last user_id from user collection
-
-router.post("/getLastUserId", async (req, res) => {
-    try {
-        const result = await prisma.user.findFirst({
-            select: {
-                user_id: true
-            },
-            orderBy: {
-                user_id: 'desc'
-            },
-            take: 1
-        });
-
-        if (!result) {
-            return res.json({ message: "001" });
-        }
-
-        const lastID = parseInt(result.user_id.slice(3)) + 1;
-        const paddedLastID = String(lastID).padStart(3, "0");
-        const newId = `U${new Date().getFullYear() % 100}${paddedLastID}`
-
-        res.json({ message: newId });
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: error.message });
-    }
-});
-
 router.post(`/registerUser`, async (req, res) => {
-    let newId;
+    const { name, email, password } = req.body;
+    if (!name || !email || !password) {
+        return res.status(400).json({ error: "Missing required fields." });
+    }
     try {
-        const generateNewUserId = async () => {
-            try {
-                const result = await prisma.user.findFirst({
-                    select: {
-                        user_id: true
-                    },
-                    orderBy: {
-                        user_id: 'desc'
-                    },
-                    take: 1
-                });
-
-                if (!result) {
-                    // If there are no existing users, start with "N23001"
-                    newId = 'U23001';
-                } else {
-                    // Parse the current user_id, increment it, and format the new user_id
-                    const lastID = parseInt(result.user_id.slice(3)) + 1;
-                    const paddedLastId = String(lastID).padStart(3, "0");
-                    newId = `U23${paddedLastId}`;
-                }
-
-            } catch (error) {
-                console.error(error);
-            }
-        };
-
-        await generateNewUserId();
-
-        const { name, number, password } = req.body;
-
-        const salt = await bcrypt.genSalt(10);
-
-        newPassword = await bcrypt.hash(password, salt);
-
-        const result = await prisma.user.create({
+        const user = await prisma.user.create({
             data: {
                 name,
-                user_id: newId,
-                number,
-                password: newPassword
+                email,
+                password: await bcrypt.hash(password, 10),
             },
-        });
-        // await logger("user_created", req.user.id, `User created: ${name}`);
-        res.status(201).json(result); // 201 for successful creation
-    } catch (error) {
-        // await logger("error", req.user.id, `Error creating organization: ${error.message}`);
-        res.status(500).json({ message: error.message });
-    }
-});
+        })
+        res.status(200).json(
+            { message: "User Created Successfully", ...user, success: true },
+        );
+        await logger("user_created", name, `User created: ${user.id}`);
 
+    } catch (error) {
+        res.status(500).json(
+            { error: "User Creation Failed", ...error, success: false },
+        );
+        await logger("error", name, `Error creating user: ${error.message}`);
+    }
+}
+);
 
 router.post('/loginUser', async (req, res) => {
-    const { number, password } = req.body;
-
+    const { email, password } = req.body;
     try {
-        const user = await prisma.user.findUnique({
-            where: {
-                number: number,
-            },
+        const user = await prisma.user.findFirst({
+            where: { email },
         });
 
-        if (!user) throw Error("Incorrect Number");
+        if (!user) return res.status(404).json({ error: "User not found" });
 
-        const match = await bcrypt.compare(password, user.password);
+        if (!user.password) return res.status(404).json({ error: "User Pass not found" });
 
-        if (!match) throw Error("Incorrect Password");
+        const isCorrect = await bcrypt.compare(password, user.password);
 
-        const user_id = user.user_id;
-        const token = await createToken(number);
+        if (!isCorrect) return res.status(400).json({ error: "Invalid credentials" });
 
-        res.status(200).json({ user_id, token });
+        return res.status(200).json({ message: "User Login Successfully", ...user, success: true });
 
     } catch (error) {
-        // await logger("error", req.user.id, `Error creating organization: ${error.message}`);
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ error: "Internal Server error", ...error, success: false });
     }
 })
 
@@ -370,7 +307,7 @@ router.post('/getAllActivitiesForOrg', async (req, res) => {
                     user: user_id
                 },
                 orderBy: {
-                    date: 'desc' 
+                    date: 'desc'
                 },
                 skip,
                 take: pageSize
