@@ -29,10 +29,12 @@ app.use(fileupload());
 
 //? CONTROLERS IMPORT
 const auth = require("./routes/auth")
+const blog = require("./routes/blog")
 
 
 //? CONTROLLERS USE
 app.use("/auth", auth)
+app.use("/blog", blog)
 
 
 //? VIEW ENGINE
