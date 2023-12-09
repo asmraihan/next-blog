@@ -167,7 +167,7 @@ router.post(`/deleteBlog`, async (req, res) => {
 // update blog
 
 router.post(`/updateBlog`, async (req, res) => {
-    const { id, title, content} = req.body;
+    const { id, title, content } = req.body;
     if (!id || !title || !content) {
         return res.status(400).json({ error: "Missing required fields." });
     }
@@ -187,8 +187,27 @@ router.post(`/updateBlog`, async (req, res) => {
         );
         await logger("error", title, `Error updating blog: ${error.message}`);
     }
-}
-);
+});
+
+// search blog
+
+router.post(`/searchBlog`, async (req, res) => {
+    try {
+        const { searchTerm } = req.body;
+        const blogs = await prisma.blog.findMany({
+            where: {
+                OR: [
+                    { title: { contains: searchTerm ?? "" } },
+                    { content: { contains: searchTerm ?? "" } },
+                    { location: { contains: searchTerm ?? "" } },
+                ],
+            },
+        });
+        res.status(200).json({ blogs, success: true });
+    } catch (error) {
+        res.status(500).json({ error: "Internal Server error", ...error, success: false });
+    }
+});
 
 
 module.exports = router;

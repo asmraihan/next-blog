@@ -1,8 +1,8 @@
-import { Inter } from 'next/font/google'
 import './globals.css'
 import Session from './components/providers/Session'
+import Navbar from './components/shared/Navbar'
+import Footer from './components/shared/Footer'
 
-const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
   title: 'Next Blog',
@@ -12,9 +12,13 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className="min-h-screen">
         <Session>
-          {children}
+          <main>
+            <Navbar />
+            {children}
+            <Footer />
+          </main>
         </Session>
       </body>
     </html>
