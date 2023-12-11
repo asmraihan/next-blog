@@ -34,7 +34,7 @@ router.post(`/createCategory`, async (req, res) => {
 
 //get all categories
 
-router.get(`/getCategories`, async (req, res) => {
+router.post(`/getCategories`, async (req, res) => {
     try {
         const categories = await prisma.category.findMany();
         res.status(200).json({ categories, success: true });
@@ -87,7 +87,7 @@ router.post(`/deleteCategory`, async (req, res) => {
 
 // get all blogs
 
-router.get(`/getAllBlogs`, async (req, res) => {
+router.post(`/getAllBlogs`, async (req, res) => {
     try {
         const blogs = await prisma.blog.findMany();
         res.status(200).json({ blogs, success: true });

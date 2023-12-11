@@ -32,7 +32,7 @@ const Navbar = () => {
                     <div className='flex items-center gap-4 p-2'>
                         {(status === 'authenticated' ? authLinks : guestLinks).map((item) => (
                             <Link key={item.href} href={item.href}>
-                                <p className='text-gray-900 font-semibold  hover:text-gray-600 duration-300'>{item.label}</p>
+                                <p className='text-gray-900 font-semibold  hover:text-black duration-300'>{item.label}</p>
                             </Link>
                         ))}
                     </div>

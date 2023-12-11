@@ -1,8 +1,9 @@
+import HomeSection from "./components/sections/HomeSection";
 
 export default function Home() {
   return (
   <main>
-    <h1>Home</h1>
+    <HomeSection />
   </main>
   )
 }
